@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="utf-8">
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+    <script>
+        document.addEventListener('DOMContentLoaded', setHeight, false);
+        
+        function setHeight() {
+            
+            var bodyHeight = document.body.offsetHeight;
+            var contHeight = document.getElementById('p-wrapper').offsetHeight;
+            if(bodyHeight > contHeight) {
+                document.getElementById('p-wrapper').className = document.getElementById('p-wrapper').className + " p-wrapper-short";
+            }
+            
+        }
+    </script>
+	<title></title>
+	<link rel="stylesheet" href="style.css" media="all" />
+</head>
+<body id="body">
+<div id="p-wrapper">

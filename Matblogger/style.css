@@ -1,0 +1,45 @@
+* {margin: 0; padding: 0;}
+@font-face {
+font-family: "Bello Pro";
+src: url('BelloPro.otf');
+}
+
+/* =Typography (Global)
+-----------------------------------------------------------------------------*/
+* {font-family: "Helvetica Neue", "Lucida Grande", Tahoma, sans-serif !important; float:none !important;}
+body { font-size: 14px; line-height: 22px; color:#474642; text-shadow: 0px 1px 0px #fff; background: #f2f2f2; #e6e3de;  text-align:left; }
+a {  text-decoration: underline; color: #0067FF; }
+a:focus, 
+a:hover,a:active     { text-decoration:none; color: #0067FF;}
+
+p, ul, dl, ol, ul {margin: 0 0 10px;}
+h1, h1 a, h2, h2 a,h3, h3 a  { font-family: "Helvetica Neue", Helvetica, sans-serif; margin: 10px 0 5px;}
+h1 {color: #189ADB; font-weight: bold; font-size: 22px; line-height:25px; background: #fff; padding: 10px; border-bottom: 1px solid #ddd; margin: 0;}
+.blog-url {font-size: 13px; color:#999; display: block; line-height: 16px; margin: 3px 0px 0px 0px; text-overflow: ellipsis; overflow:hidden; white-space: nowrap; font-weight: normal;}
+h2 {font-size: 16px;clear: both;  }
+h3 {font-size: 15px; color: #555; margin-bottom: 2px; }
+ol li,ul li {margin-left: 2em;}
+.m-cont {background: #f2f2f2; padding: 14px 10px 50px; }
+.p-wrapper-short {position: absolute; top: 10px; right: 10px; left: 10px; bottom: 10px;background: #f2f2f2;}
+.m-cont div {max-width: 100% !important;}
+img {display: block !important; float:none !important; margin: 0 auto 10px; max-width:90% !important; height: auto !important; border: 2px solid #fff; -webkit-box-shadow: 0 0 5px #555;}
+table {margin-bottom: 10px; width: 100% !important;}
+td {}
+footer {margin: 40px -10px 0 -10px;background: #fff; border-top: 1px solid ccc; padding: 5px; font-size: 12px; font-weight: bold; text-align: center; }
+footer a {text-decoration: none; color: #999;}
+/* Startside */
+.start-page {font-size: 15px; line-height: 19px; padding: 20px 15px 0; text-align: center; color: #808080;}
+.start-img {background: url(bg-iphone.png) no-repeat 50% 0%; height: 225px; width: 100%; display: block;}
+@media screen and (max-width:400px) {
+	body {font-size: 16px; line-height: 22px;}
+}
+@media screen and (min-width:700px) {
+body {padding: 10px; background: #333333;}
+#p-wrapper { -webkit-box-shadow: 0 0 5px #999; }
+h1 { }
+.m-cont {}
+/* Startside */
+.start-page {font-size: 17px; line-height: 22px; padding: 40px 25px 0; text-align: center; color: #808080; position: absolute; top: 10px; right: 10px; left: 10px; bottom: 10px; background: #eee;}
+.p-wrapper-short .start-page {top: 0px; right: 0px; left: 0px; bottom: 0px;}
+.start-img {background: url(bg-ipad.png) no-repeat 50% 0%; height: 460px; display: block; margin-bottom: 10px;}
+}
