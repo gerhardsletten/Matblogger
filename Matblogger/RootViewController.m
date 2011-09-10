@@ -4,7 +4,6 @@
 - (void)showFavorites;
 
 - (void)showMessage:(NSString *)val1 message:(NSString *)val2;
-- (void)startIconDownload:(FeedItem *)feedItem forIndexPath:(NSIndexPath *)indexPath;
 - (void)handleError:(NSError *)error;
 
 - (void) loadMore;
@@ -17,7 +16,7 @@
 
 @implementation RootViewController
 
-@synthesize imageDownloadsInProgress,appListFeedConnection, source;
+@synthesize appListFeedConnection, source;
 
 @synthesize service, context;
 
@@ -26,7 +25,6 @@
     
 	[parser release];
 	[source release];
-	[imageDownloadsInProgress release];
 	[appListFeedConnection release];
 	[source release];
 	[reloadButton release];
@@ -51,7 +49,7 @@
     service = [LOStorageService instance];
 	context = [service managedObjectContext];
     
-	self.imageDownloadsInProgress = [NSMutableDictionary dictionary];
+	
     
     reloadButton = [[UIBarButtonItem alloc] initWithImage:[UIImage imageNamed:@"reload.png"] style:UIBarButtonItemStylePlain target:self action:@selector(refresh:)];
 	self.navigationItem.leftBarButtonItem = reloadButton;
@@ -95,10 +93,6 @@
 - (void)didReceiveMemoryWarning
 {
     [super didReceiveMemoryWarning];
-    
-    // terminate all pending download connections
-    NSArray *allDownloads = [self.imageDownloadsInProgress allValues];
-    [allDownloads makeObjectsPerformSelector:@selector(cancelDownload)];
 }
 
 #pragma mark - Loading/displaying feed
@@ -133,7 +127,7 @@
 - (void) loadFeed:(NSInteger)page {
     if(!self.loading) {
         self.loading = YES;
-        //NSString *loadURL = [NSString stringWithFormat:@"http://localhost/~gerhard/api/matblogger/index.php?from=%ld&limit=%ld",page, item_per_page];
+        //NSString *loadURL = [NSString stringWithFormat:@"http://localhost/~gerhard/api/matblogger/debug.php?from=%ld&limit=%ld",page, item_per_page];
         NSString *loadURL = [NSString stringWithFormat:@"http://api.gersh.no/matblogger/index.php?from=%ld&limit=%ld",page, item_per_page];
         
         NSURLRequest *urlRequest = [NSURLRequest requestWithURL:[NSURL URLWithString:loadURL]];
@@ -245,27 +239,6 @@
     [self drawFeed];
 }
 
-
-
-#pragma mark - Handling error
-
-- (void)handleError:(NSError *)error
-{
-    NSString *errorMessage = [error localizedDescription];
-	[self showMessage:@"Ingen forbindelse" message:errorMessage];
-}
-
-- (void)showMessage:(NSString *)val1 message:(NSString *)val2
-{
-    UIAlertView *alertView = [[UIAlertView alloc] initWithTitle:val1
-														message:val2
-													   delegate:nil
-											  cancelButtonTitle:@"OK"
-											  otherButtonTitles:nil];
-    [alertView show];
-    [alertView release];
-}
-
 #pragma mark - Table view data source
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
@@ -289,7 +262,7 @@
 			cell.selectionStyle = UITableViewCellSelectionStyleNone;
         }
 		
-		cell.detailTextLabel.text = @"Loading…";
+		cell.detailTextLabel.text = @"Laster…";
 		
 		return cell;
     }
@@ -320,14 +293,14 @@
 		cell.imageView.layer.shadowOpacity = 0.3f;
 		cell.imageView.layer.shadowOffset = CGSizeZero;
         // Only load cached images; defer new downloads until scrolling ends
-        if (!item.img)
+        if (!item.img && item.imageUrl)
         {
             if (self.tableView.dragging == NO && self.tableView.decelerating == NO)
             {
                 [self startIconDownload:item forIndexPath:indexPath];
             }
             // if a download is deferred or in progress, return a placeholder image
-            cell.imageView.image = [UIImage imageNamed:@"Placeholder.png"];                
+            cell.imageView.image = [UIImage imageNamed:@"Placeholder.png"];  
         }
         else
         {
@@ -341,6 +314,44 @@
     
     return cell;
 }
+
+-(void)tableView:(UITableView *)tableView willDisplayCell:(UITableViewCell *)cell forRowAtIndexPath:(NSIndexPath *)indexPath {
+    if([items count] > 0) {
+        FeedItem	*item = [items objectAtIndex:indexPath.row];
+        cell.backgroundColor = UIColorFromRGB(0xffffff);
+        if([item.read boolValue]) {
+            cell.textLabel.textColor = UIColorFromRGB(0x999999);
+        } else {
+            cell.textLabel.textColor = UIColorFromRGB(0x189ADB);
+        }
+        //[item release];
+    } else {
+        cell.textLabel.textColor = UIColorFromRGB(0x189ADB);
+    }
+    
+	cell.detailTextLabel.textColor = UIColorFromRGB(0x474642);
+}
+
+
+#pragma mark - Handling error
+
+- (void)handleError:(NSError *)error
+{
+    NSString *errorMessage = [error localizedDescription];
+	[self showMessage:@"Ingen forbindelse" message:errorMessage];
+}
+
+- (void)showMessage:(NSString *)val1 message:(NSString *)val2
+{
+    UIAlertView *alertView = [[UIAlertView alloc] initWithTitle:val1
+														message:val2
+													   delegate:nil
+											  cancelButtonTitle:@"OK"
+											  otherButtonTitles:nil];
+    [alertView show];
+    [alertView release];
+}
+
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
     if([items count] > 0) {
@@ -370,75 +381,6 @@
 }
 
 
-#pragma mark - Table view delegate
 
-- (void)startIconDownload:(FeedItem *)appRecord forIndexPath:(NSIndexPath *)indexPath
-{
-    IconDownloader *iconDownloader = [imageDownloadsInProgress objectForKey:indexPath];
-    if (iconDownloader == nil) 
-    {
-        iconDownloader = [[IconDownloader alloc] init];
-        iconDownloader.appRecord = appRecord;
-        iconDownloader.indexPathInTableView = indexPath;
-        iconDownloader.delegate = self;
-        [imageDownloadsInProgress setObject:iconDownloader forKey:indexPath];
-        [iconDownloader startDownload];
-        [iconDownloader release];   
-    }
-}
-
-// this method is used in case the user scrolled into a set of cells that don't have their app icons yet
-- (void)loadImagesForOnscreenRows
-{
-    if ([self.items count] > 0)
-    {
-        NSArray *visiblePaths = [self.tableView indexPathsForVisibleRows];
-        for (NSIndexPath *indexPath in visiblePaths)
-        {
-            FeedItem *item = [self.items objectAtIndex:indexPath.row];
-            
-            if (!item.img) // avoid the app icon download if the app already has an icon
-            {
-                [self startIconDownload:item forIndexPath:indexPath];
-				
-            }
-        }
-    }
-}
-
-// called by our ImageDownloader when an icon is ready to be displayed
-- (void)appImageDidLoad:(NSIndexPath *)indexPath
-{
-    IconDownloader *iconDownloader = [imageDownloadsInProgress objectForKey:indexPath];
-    if (iconDownloader != nil)
-    {
-        UITableViewCell *cell = [self.tableView cellForRowAtIndexPath:iconDownloader.indexPathInTableView];
-        
-        // Display the newly loaded image
-		FeedItem	*item = [items objectAtIndex:iconDownloader.indexPathInTableView.row];
-		
-		CGRect img_frame = cell.imageView.frame;
-		img_frame.size.width = img_frame.size.height;
-		cell.imageView.image = [item thumbnailOfSize:img_frame.size];
-    }
-}
-
-
-#pragma mark -
-#pragma mark Deferred image loading (UIScrollViewDelegate)
-
-// Load images for all onscreen rows when scrolling is finished
-- (void)scrollViewDidEndDragging:(UIScrollView *)scrollView willDecelerate:(BOOL)decelerate
-{
-    if (!decelerate)
-	{
-        [self loadImagesForOnscreenRows];
-    }
-}
-
-- (void)scrollViewDidEndDecelerating:(UIScrollView *)scrollView
-{
-    [self loadImagesForOnscreenRows];
-}
 
 @end

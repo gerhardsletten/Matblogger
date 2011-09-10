@@ -60,14 +60,10 @@
     }
 	
     [request release];
-    //[entity release];
-	//[mutableFetchResults release];
-     
-	
-    //self.items = [NSMutableArray arrayWithArray:[service allObjectsOfType:[FeedItem class]]];
     
 }
 
+#pragma mark - Table view data source
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
 {
@@ -90,7 +86,7 @@
 			cell.selectionStyle = UITableViewCellSelectionStyleNone;
         }
 		
-		cell.detailTextLabel.text = @"Empty";
+		cell.detailTextLabel.text = @"Ingen favoritter ennå";
 		
 		return cell;
     }
@@ -121,10 +117,14 @@
 		cell.imageView.layer.shadowOpacity = 0.3f;
 		cell.imageView.layer.shadowOffset = CGSizeZero;
         // Only load cached images; defer new downloads until scrolling ends
-        if (!item.img)
+        if (!item.img && item.imageUrl)
         {
+            if (self.tableView.dragging == NO && self.tableView.decelerating == NO)
+            {
+                [self startIconDownload:item forIndexPath:indexPath];
+            }
             // if a download is deferred or in progress, return a placeholder image
-            cell.imageView.image = [UIImage imageNamed:@"Placeholder.png"];                
+            cell.imageView.image = [UIImage imageNamed:@"Placeholder.png"];  
         }
         else
         {
@@ -138,6 +138,7 @@
     
     return cell;
 }
+
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section
 {
@@ -155,11 +156,8 @@
 		
         // Update the array and table view.
         
-        
-        NSLog(@"items: %@", items);
         [items removeObjectAtIndex:indexPath.row];
         [context deleteObject:item];
-        NSLog(@"items: %@", items);
         [tableView deleteRowsAtIndexPaths:[NSArray arrayWithObject:indexPath] withRowAnimation:YES];
 		
         // Commit the change.
@@ -171,6 +169,17 @@
     }
 }
 
+-(void)tableView:(UITableView *)tableView willDisplayCell:(UITableViewCell *)cell forRowAtIndexPath:(NSIndexPath *)indexPath {
+    if([items count] > 0) {
+        cell.backgroundColor = UIColorFromRGB(0xffffff);
+        cell.textLabel.textColor = UIColorFromRGB(0x189ADB);
+    } else {
+        cell.textLabel.textColor = UIColorFromRGB(0x189ADB);
+    }
+    
+	cell.detailTextLabel.textColor = UIColorFromRGB(0x474642);
+}
+
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
     if([items count] > 0) {
         FeedItem	*item = [items objectAtIndex:indexPath.row];
@@ -178,7 +187,9 @@
         if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPhone) {
             if(!self.detailViewController) {
                 self.detailViewController = [[DetailViewController alloc] initWithNibName:@"DetailViewController_iPhone" bundle:nil];
+                
             }
+            self.detailViewController.fromFavorite = YES;
             if(!self.detailViewController.context)
                 self.detailViewController.context = self.context;
             if(!self.detailViewController.service)
@@ -186,6 +197,7 @@
             self.detailViewController.selectedItem = item;
             [self.navigationController pushViewController:self.detailViewController animated:YES];
         } else {
+            self.detailViewController.fromFavorite = YES;
             self.detailViewController.selectedItem = item;
             if(!self.detailViewController.context)
                 self.detailViewController.context = self.context;
@@ -197,5 +209,14 @@
     
 }
 
+- (void)appImageDidLoad:(NSIndexPath *)indexPath
+{
+    [super appImageDidLoad:indexPath];
+    // Save new loaded images
+    NSError *error;
+    if (![context save:&error]) {
+        // Handle the error.
+    }
+}
 
 @end

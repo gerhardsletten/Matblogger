@@ -22,7 +22,7 @@
 
 @synthesize selectedItem,webView,request_open_url;
 @synthesize toolbar=_toolbar,homeBtn,favBtn,actionBtn;
-@synthesize service, context;
+@synthesize service, context,fromFavorite;
 
 - (void)dealloc
 {
@@ -88,6 +88,8 @@
     } else {
         self.homeBtn.enabled = self.favBtn.enabled = self.actionBtn.enabled = NO;
     }
+    if(self.fromFavorite)
+        self.favBtn.enabled = NO;
     if(item != selectedItem){
         [selectedItem release];
         selectedItem = [item retain];
@@ -128,6 +130,7 @@
     //[self.selectedItem setValue:[NSNumber numberWithBool:YES] forKey:@"favorite"];
     [self.selectedItem addToContext:context];
     [service save];
+    self.favBtn.enabled = NO;
     UIAlertView *someError = [[UIAlertView alloc] initWithTitle: @"Lagt til i favoritter" message: @"Artikkelen er lagt til i favoritter" delegate:nil cancelButtonTitle: @"OK" otherButtonTitles:nil];
     [someError show];
     [someError release];

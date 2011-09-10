@@ -25,11 +25,14 @@ blue:((float)(rgbValue & 0xFF))/255.0 alpha:1.0]
     LOStorageService *service;
 	NSManagedObjectContext *context;
     UIBarButtonItem *homeBtn, *favBtn, *actionBtn;
+    BOOL fromFavorite;
 }
 
 @property(nonatomic,retain) FeedItem *selectedItem;
 @property(nonatomic,retain) IBOutlet UIWebView *webView;
 @property(nonatomic,retain) NSURL *request_open_url;
+
+@property(nonatomic) BOOL fromFavorite;
 
 @property (nonatomic, retain) IBOutlet UIToolbar *toolbar;
 @property (nonatomic, retain) IBOutlet UIBarButtonItem *homeBtn;

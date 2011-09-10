@@ -18,17 +18,22 @@ blue:((float)(rgbValue & 0xFF))/255.0 alpha:1.0]
 #import "DetailViewController.h"
 #import "FeedItem.h"
 #import "CustomNavigationBar.h"
+#import "IconDownloader.h"
 
 
 @class DetailViewController;
 
-@interface BaseViewController : UITableViewController {
+@interface BaseViewController : UITableViewController <IconDownloaderDelegate,UIScrollViewDelegate> {
     DetailViewController *detailViewController;
+    NSMutableDictionary *imageDownloadsInProgress;
     NSMutableArray *items;
     NSDateFormatter *dateFormat;
     BOOL isLandscape;
     
 }
+
+@property (nonatomic, retain) NSMutableDictionary *imageDownloadsInProgress;
+
 @property (nonatomic, retain) DetailViewController *detailViewController;
 @property (nonatomic, retain) NSMutableArray *items;
 @property (nonatomic, retain) NSDateFormatter *dateFormat;
@@ -37,5 +42,8 @@ blue:((float)(rgbValue & 0xFF))/255.0 alpha:1.0]
 
 - (void) goLandscape;
 - (void) goPortrait;
+
+- (void)appImageDidLoad:(NSIndexPath *)indexPath;
+- (void)startIconDownload:(FeedItem *)feedItem forIndexPath:(NSIndexPath *)indexPath;
 
 @end

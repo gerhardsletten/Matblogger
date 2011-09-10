@@ -3,7 +3,7 @@
 @implementation BaseViewController
 
 @synthesize detailViewController=_detailViewController,items,dateFormat;
-@synthesize isLandscape;
+@synthesize isLandscape,imageDownloadsInProgress;
 
 - (void)dealloc
 {
@@ -11,14 +11,24 @@
     [_detailViewController release];
     [items release];
     [dateFormat release];
-    
+    [imageDownloadsInProgress release];
 }
 
 #pragma mark - View lifecycle
 
+- (void)didReceiveMemoryWarning
+{
+    [super didReceiveMemoryWarning];
+    
+    // terminate all pending download connections
+    NSArray *allDownloads = [self.imageDownloadsInProgress allValues];
+    [allDownloads makeObjectsPerformSelector:@selector(cancelDownload)];
+}
+
 - (void)viewDidLoad
 {
     [super viewDidLoad];
+    self.imageDownloadsInProgress = [NSMutableDictionary dictionary];
     // Set the title view to the Instagram logo
     UIImage* titleImage = [UIImage imageNamed:@"matblogger.png"];
     UIView* titleView = [[UIImageView alloc] initWithFrame:CGRectMake(0,0,titleImage.size.width, self.navigationController.navigationBar.frame.size.height)];
@@ -122,25 +132,79 @@
     return count;
 }
 
+#pragma mark - Table view data source
 
--(void)tableView:(UITableView *)tableView willDisplayCell:(UITableViewCell *)cell forRowAtIndexPath:(NSIndexPath *)indexPath {
-    if([items count] > 0) {
-        FeedItem	*item = [items objectAtIndex:indexPath.row];
-        cell.backgroundColor = UIColorFromRGB(0xffffff);
-        if([item.read boolValue]) {
-            cell.textLabel.textColor = UIColorFromRGB(0x999999);
-        } else {
-            cell.textLabel.textColor = UIColorFromRGB(0x189ADB);
-        }
-        //[item release];
-    } else {
-        cell.textLabel.textColor = UIColorFromRGB(0x189ADB);
+
+
+#pragma mark - Table view delegate
+
+- (void)startIconDownload:(FeedItem *)appRecord forIndexPath:(NSIndexPath *)indexPath
+{
+    IconDownloader *iconDownloader = nil;
+    if (iconDownloader == nil) 
+    {
+        iconDownloader = [[IconDownloader alloc] init];
+        iconDownloader.appRecord = appRecord;
+        iconDownloader.indexPathInTableView = indexPath;
+        iconDownloader.delegate = self;
+        [imageDownloadsInProgress setObject:iconDownloader forKey:indexPath];
+        [iconDownloader startDownload];
+        [iconDownloader release];   
     }
-    
-	cell.detailTextLabel.textColor = UIColorFromRGB(0x474642);
+}
+
+// this method is used in case the user scrolled into a set of cells that don't have their app icons yet
+- (void)loadImagesForOnscreenRows
+{
+    if ([self.items count] > 0)
+    {
+        [self.tableView visibleCells];
+        NSArray *visiblePaths = [self.tableView indexPathsForVisibleRows];
+        for (NSIndexPath *indexPath in visiblePaths)
+        {
+            FeedItem *item = [self.items objectAtIndex:indexPath.row];
+            if (!item.img && item.imageUrl) // avoid the app icon download if the app already has an icon
+            {
+                [self startIconDownload:item forIndexPath:indexPath];
+				
+            } 
+        }
+    }
+}
+
+// called by our ImageDownloader when an icon is ready to be displayed
+- (void)appImageDidLoad:(NSIndexPath *)indexPath
+{
+    IconDownloader *iconDownloader = [imageDownloadsInProgress objectForKey:indexPath];
+    if (iconDownloader != nil)
+    {
+        UITableViewCell *cell = [self.tableView cellForRowAtIndexPath:iconDownloader.indexPathInTableView];
+        
+        // Display the newly loaded image
+		FeedItem	*item = [items objectAtIndex:iconDownloader.indexPathInTableView.row];
+		CGRect img_frame = cell.imageView.frame;
+		img_frame.size.width = img_frame.size.height;
+		cell.imageView.image = [item thumbnailOfSize:img_frame.size];
+    }
 }
 
 
+#pragma mark -
+#pragma mark Deferred image loading (UIScrollViewDelegate)
+
+// Load images for all onscreen rows when scrolling is finished
+- (void)scrollViewDidEndDragging:(UIScrollView *)scrollView willDecelerate:(BOOL)decelerate
+{
+    if (!decelerate)
+	{
+        [self loadImagesForOnscreenRows];
+    }
+}
+
+- (void)scrollViewDidEndDecelerating:(UIScrollView *)scrollView
+{
+    [self loadImagesForOnscreenRows];
+}
 
 
 @end
